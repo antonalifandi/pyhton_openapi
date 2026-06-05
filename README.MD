@@ -1,4 +1,4 @@
-# Python OpenAPI
+# Python OpenAPI Example
 
 API REST berbasis **FastAPI** dengan database **PostgreSQL**, CRUD user, operasi hitung angka, dan autentikasi JWT.
 
