@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +6,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from pydantic import BaseModel
 
+from auth_utils import ALGORITHM, SECRET_KEY, create_access_token
 from database import Base, engine
+from routers import auth as auth_router
 from routers import users as users_router
 
 
@@ -27,10 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(users_router.router)
-
-# Konfigurasi JWT
-SECRET_KEY = "mysecretkey"
-ALGORITHM = "HS256"
+app.include_router(auth_router.router)
 # Model untuk operasi hitung angka
 class HitungAngka(BaseModel):
     angka1: int
@@ -84,9 +82,7 @@ def bagi(data: HitungAngka):
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if form_data.username != "asep" or form_data.password != "password123":
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    expire = datetime.utcnow() + timedelta(minutes=30)
-    payload = {"sub": form_data.username, "exp": expire}
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    token = create_access_token(form_data.username)
     return {"access_token": token, "token_type": "bearer"}
 
 # 5. Endpoint dengan proteksi JWT
