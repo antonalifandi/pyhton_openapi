@@ -4,6 +4,8 @@ API REST berbasis **FastAPI** dengan database **PostgreSQL**, CRUD user, operasi
 
 Dokumentasi interaktif (Swagger UI): [http://localhost:8000/docs](http://localhost:8000/docs)
 
+**Mahasiswa (belum punya PostgreSQL/DBeaver):** panduan singkat langkah demi langkah → [`PANDUAN_BROADCAST_MAHASISWA.md`](PANDUAN_BROADCAST_MAHASISWA.md)
+
 ---
 
 ## Daftar Isi
