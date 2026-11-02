@@ -105,22 +105,23 @@ Salin file contoh dan sesuaikan kredensial Anda:
 cp .env.example .env
 ```
 
-Isi `.env` (contoh):
+Isi `.env` (contoh — **PostgreSQL di laptop**, port **5432**):
 
 ```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=PASSWORD_ANDA
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+POSTGRES_DB=python_openapi
 DATABASE_URL=postgresql+psycopg2://postgres:PASSWORD_ANDA@127.0.0.1:5432/python_openapi
 ```
 
-Export manual (tanpa file `.env`):
-
-```bash
-export DATABASE_URL=postgresql+psycopg2://postgres:PASSWORD_ANDA@127.0.0.1:5432/python_openapi
-```
+File `.env` dibaca otomatis saat aplikasi start (`python-dotenv`).
 
 **Default** jika `DATABASE_URL` tidak diset:
 
 ```
-postgresql+psycopg2://postgres:postgres@localhost:5432/python_openapi
+postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/python_openapi
 ```
 
 Tabel `users` dibuat otomatis saat aplikasi pertama kali dijalankan (`create_all` pada startup).
@@ -138,26 +139,164 @@ Tabel `users` dibuat otomatis saat aplikasi pertama kali dijalankan (`create_all
 
 ## Menjalankan Aplikasi
 
-### Mode development (auto-reload)
+Panduan ini menjalankan API **di laptop** (tanpa Docker), dengan database **PostgreSQL lokal** (pgAdmin / port **5432**).
+
+### Langkah demi langkah (development)
+
+#### Langkah 1 — Masuk ke folder proyek
+
+**Linux / macOS (bash):**
 
 ```bash
-source myenv/bin/activate
-export DATABASE_URL=postgresql+psycopg2://postgres:PASSWORD_ANDA@127.0.0.1:5432/python_openapi
+cd python-openapi
+```
 
+**Windows (PowerShell):**
+
+```powershell
+cd D:\learning\Learning_Flutter\python_openapi
+```
+
+(Sesuaikan path dengan lokasi folder Anda.)
+
+#### Langkah 2 — Buat dan aktifkan virtual environment
+
+**Linux / macOS:**
+
+```bash
+python3 -m venv myenv
+source myenv/bin/activate
+```
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv myenv
+.\myenv\Scripts\Activate.ps1
+```
+
+Jika muncul error kebijakan eksekusi di PowerShell, jalankan sekali (sebagai admin jika perlu):
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Setelah aktif, prompt biasanya diawali `(myenv)`.
+
+#### Langkah 3 — Install dependensi
+
+```bash
+pip install -r requirements.txt
+```
+
+Tunggu sampai semua paket ter-install tanpa error.
+
+#### Langkah 4 — Siapkan PostgreSQL
+
+1. Pastikan **PostgreSQL di laptop sudah running** (Services atau pgAdmin bisa connect ke `localhost:5432`).
+2. Buat database (jika belum ada), lewat **Query Tool** di pgAdmin atau `psql`:
+
+```sql
+CREATE DATABASE python_openapi;
+```
+
+#### Langkah 5 — File `.env`
+
+Salin contoh dan edit password sesuai PostgreSQL Anda:
+
+**Linux / macOS:**
+
+```bash
+cp .env.example .env
+```
+
+**Windows (PowerShell):**
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Contoh isi `.env` (ganti `PASSWORD_ANDA`):
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=PASSWORD_ANDA
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+POSTGRES_DB=python_openapi
+DATABASE_URL=postgresql+psycopg2://postgres:PASSWORD_ANDA@127.0.0.1:5432/python_openapi
+```
+
+Aplikasi membaca `.env` otomatis saat start.
+
+#### Langkah 6 — Jalankan server (auto-reload)
+
+Pastikan virtual environment masih aktif `(myenv)`, lalu:
+
+```bash
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+Jika berhasil, terminal menampilkan sekitar:
+
+```text
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Application startup complete.
+```
+
+#### Langkah 7 — Buka di browser
+
+| Tujuan | URL |
+|--------|-----|
+| Swagger UI (coba API) | http://localhost:8000/docs |
+| ReDoc | http://localhost:8000/redoc |
+| Health / contoh endpoint | http://localhost:8000/hello |
+
+#### Langkah 8 — Uji singkat
+
+1. Di Swagger, buka **GET `/users`** → **Try it out** → **Execute** (awalnya bisa kosong `[]`).
+2. **POST `/users`** dengan body JSON (nama, email, password).
+3. **GET `/users`** lagi — data harus muncul di response **dan** di pgAdmin (`python_openapi` → Schemas → public → Tables → `users`).
+
+#### Menghentikan server
+
+Di terminal tempat uvicorn jalan: tekan **Ctrl+C**.
+
+---
+
 ### Mode production (tanpa reload)
+
+Virtual environment aktif, `.env` sudah benar:
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-Akses:
+---
 
-- API: http://localhost:8000
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+### Ringkasan perintah (copy-paste)
+
+Setelah langkah 1–5 selesai, setiap kali development cukup:
+
+**Linux / macOS:**
+
+```bash
+cd python-openapi
+source myenv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**Windows (PowerShell):**
+
+```powershell
+cd D:\learning\Learning_Flutter\python_openapi
+.\myenv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+(`pip install` hanya wajib ulang jika `requirements.txt` berubah.)
 
 ---
 
@@ -181,35 +320,24 @@ docker run --rm -p 8000:8000 \
 
 ## Docker Compose
 
-Menjalankan PostgreSQL dan API sekaligus:
+Hanya menjalankan **API di container**; database memakai **PostgreSQL di laptop** (`host.docker.internal`).
+
+Pastikan PostgreSQL lokal sudah jalan dan database `python_openapi` ada. Isi `.env` sesuai kredensial pgAdmin Anda.
 
 ```bash
 docker compose up --build
 ```
 
-Layanan:
+| Service | Port (host) | Keterangan |
+|---------|-------------|------------|
+| api | 8000 | FastAPI → DB di `127.0.0.1:5432` (via `host.docker.internal` dari container) |
 
-| Service | Port | Keterangan |
-|---------|------|------------|
-| db | 5432 | PostgreSQL 16 |
-| api | 8000 | FastAPI |
-
-Kredensial default di `docker-compose.yml`:
-
-- User: `postgres`
-- Password: `postgres`
-- Database: `python_openapi`
+**pgAdmin / DBeaver:** `localhost`, port **5432**, database `python_openapi` — **sama** dengan yang dipakai Swagger/API.
 
 Hentikan:
 
 ```bash
 docker compose down
-```
-
-Hapus volume database:
-
-```bash
-docker compose down -v
 ```
 
 ---

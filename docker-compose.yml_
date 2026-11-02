@@ -1,29 +1,11 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: python_openapi
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d python_openapi"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api:
     build: .
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/python_openapi
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:${POSTGRES_PORT}/${POSTGRES_DB}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
